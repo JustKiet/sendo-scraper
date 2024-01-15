@@ -66,27 +66,27 @@ def scrape_sendo():
                 comment_contents.append(comment_text)  # Append comment_text to the list
 
 
-                # Lấy nội dung của các phần tử khác
-                title = title_element.text
-                score = rating_score_average.text
-                numbs = rating_count.text 
-                # username = d_name_spans[0].text
-                # verify = d_name_spans[2].text
+            # Lấy nội dung của các phần tử khác
+            title = title_element.text
+            score = rating_score_average.text
+            numbs = rating_count.text 
+            # username = d_name_spans[0].text
+            # verify = d_name_spans[2].text
 
-                row_data={
-                    "TenSP":title,
-                    "DG":score,
-                    "SoDG":numbs,
-                    # "TenHienthi":username,
-                    # "verify":verify,
-                    "comment_DG":star_score,
-                    "comment":comment_contents
-                }
+            row_data={
+                "TenSP":title,
+                "DG":score,
+                "SoDG":numbs,
+                # "TenHienthi":username,
+                # "verify":verify,
+                "comment_DG":star_score,
+                "comment":comment_contents
+            }
 
-                data.append(row_data)
+            data.append(row_data)
 
             driver.back()
-        products_elements = driver.find_elements(By.XPATH, "//div[@class='d7ed-d4keTB d7ed-OoK3wU']")
+            products_elements = driver.find_elements(By.XPATH, "//div[@class='d7ed-d4keTB d7ed-OoK3wU']")
 
         # Kiểm tra xem tập tin đã tồn tại chưa để xác định việc ghi headers hay không
         write_headers = not os.path.exists("sendo.csv")
