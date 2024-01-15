@@ -15,7 +15,6 @@ def scrape_sendo():
     options.headless = False  
     driver = webdriver.Edge(options=options)
     try:
-        # Truy cập vào trang web
         driver.get("https://www.sendo.vn/")
         time.sleep(5)
         search_element = driver.find_element(By.XPATH, "//input[@class='d7ed-T0Aa7w d7ed-vjfwh6']")
@@ -54,7 +53,7 @@ def scrape_sendo():
                 rating_score_average = summary_element.find_element(By.XPATH, "//span[@class='d7ed-ChCxUf d7ed-AHa8cD d7ed-mzOLVa']")
                 rating_count = summary_element.find_element(By.XPATH, "//span[@class='_3141-BtwciV d7ed-KXpuoS d7ed-bjQW4F d7ed-ekib8m']")
                 comments = driver.find_elements(By.XPATH, "//*[@id='id-danh-gia']/div/div[3]/div")
-                comment_contents = []  # List to store comment_content for all items
+                comment_contents = []
                 for comment in comments:
                     #star_container = comment.find_element(By.CSS_SELECTOR, "div[class='d7ed-P_QiIC d7ed-GE9WCQ']")
                     #star_rating = star_container.find_element(By.CSS_SELECTOR, "div.d7ed-ppmM09')]")
@@ -71,7 +70,7 @@ def scrape_sendo():
                     comment_wrapper = comment.find_element(By.CSS_SELECTOR, "div[class='_39ab-_2vzod']")
                     comment_content = comment_wrapper.find_element(By.TAG_NAME, "p")
                     comment_text = comment_content.text
-                    comment_contents.append(comment_text)  # Append comment_text to the list
+                    comment_contents.append(comment_text)
                 score = rating_score_average.text
                 numbs = rating_count.text 
                 title = title_element.text
@@ -95,10 +94,8 @@ def scrape_sendo():
                 time.sleep(3)
                 products_elements = driver.find_elements(By.CSS_SELECTOR, "div[class='d7ed-d4keTB d7ed-OoK3wU']")
 
-        # Kiểm tra xem tập tin đã tồn tại chưa để xác định việc ghi headers hay không
         write_headers = not os.path.exists("sendo.csv")
 
-        # Ghi dữ liệu vào file CSV
         with open("sendo.csv", "a", newline="", encoding="utf-8") as csv_file:
             fieldnames = [
                     "TenSP", "DG", "DG_average_image", "SoDG","comment_DG","comment"
@@ -107,13 +104,11 @@ def scrape_sendo():
             write_headers = True
 
             if write_headers:
-                writer.writeheader()  # Ghi headers chỉ khi tập tin mới
+                writer.writeheader() 
 
             writer.writerows(data)
 
     finally:
-        # Đóng trình duyệt
         driver.quit()
 
-# Call the function
 scrape_sendo()
