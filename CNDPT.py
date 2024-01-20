@@ -8,9 +8,11 @@ from selenium.common.exceptions import NoSuchElementException
 from csv import DictWriter
 import time
 import os
+import sqlite3
 from selenium.webdriver.common.action_chains import ActionChains
 
 def scrape_sendo():
+    site = 'sendo'
     options = Options()
     options.headless = False  
     driver = webdriver.Edge(options=options)
@@ -22,6 +24,7 @@ def scrape_sendo():
         search_button = driver.find_element(By.XPATH, "//button[@class='d7ed-s0YDb1 d7ed-jQXTxb d7ed-AREzVq d7ed-YaJkXL d7ed-joBgy5 d7ed-DbNJxd']")
         search_button.click()
         time.sleep(10)
+        body = driver.find_element(By.TAG_NAME,'body')
         body.send_keys(Keys.PAGE_DOWN)
         body.send_keys(Keys.PAGE_DOWN)
         body.send_keys(Keys.PAGE_DOWN)
@@ -29,9 +32,9 @@ def scrape_sendo():
         products_elements = products_wrapper.find_elements(By.CSS_SELECTOR, "div[class='d7ed-d4keTB d7ed-OoK3wU']")
         data=[]
         comment_content = ""
-        star_score = []
+        star_score = ""
         d_name_spans = ""
-        for i in range(min(len(products_elements),15)):
+        for i in range(min(len(products_elements),1)):
             try:
                 products_element = products_elements[i]
                 title_link_element = products_element.find_element(By.TAG_NAME, 'a')
@@ -47,6 +50,8 @@ def scrape_sendo():
                 body.send_keys(Keys.PAGE_DOWN)
                 body.send_keys(Keys.PAGE_DOWN)
                 title_element= driver.find_element(By.XPATH, "//h1[@class='d7ed-ytwGPk d7ed-zrT4k2 d7ed-kUYEit d7ed-AHa8cD d7ed-mzOLVa']")
+                price_element = driver.find_element(By.XPATH, "//span[@class='d7ed-ij7pjf d7ed-AHa8cD d7ed-giDKVr']")
+                price = price_element.text
                 title = "null"
                 score = "0"
                 rating_count = "0"
@@ -56,39 +61,48 @@ def scrape_sendo():
                     rating_score_average = summary_element.find_element(By.XPATH, "//span[@class='d7ed-ChCxUf d7ed-AHa8cD d7ed-mzOLVa']")
                     rating_count = summary_element.find_element(By.XPATH, "//span[@class='_3141-BtwciV d7ed-KXpuoS d7ed-bjQW4F d7ed-ekib8m']")
                     comments = driver.find_elements(By.XPATH, "//*[@id='id-danh-gia']/div/div[3]/div")
-                    comment_contents = []
+                    comment_contents = ""
                     for comment in comments:
-                        #star_container = comment.find_element(By.CSS_SELECTOR, "div[class='d7ed-P_QiIC d7ed-GE9WCQ']")
-                        #star_rating = star_container.find_element(By.CSS_SELECTOR, "div.d7ed-ppmM09')]")
-                        #if star_rating.find_element(By.XPATH, "//div[contains(@class, 'd7ed-AYt6AP')]"):
-                        #    star_score.append('5')
-                        #elif star_rating.find_element(By.XPATH, "//div[contains(@class, 'd7ed-vdoKHm')]"):
-                        #    star_score.append('4')
-                        #elif star_rating.find_element(By.XPATH, "//div[contains(@class, 'd7ed-LrYHhb')]"):
-                        #    star_score.append('3')
-                        #elif star_rating.find_element(By.XPATH, "//div[contains(@class, 'd7ed-tWkzSc')]"):
-                        #    star_score.append('2')
-                        #elif star_rating.find_element(By.XPATH, "//div[contains(@class, 'd7ed-ygMGdU')]"):
-                        #    star_score.append('1')
+                        star_container = comment.find_element(By.CSS_SELECTOR, "div[class='d7ed-P_QiIC d7ed-GE9WCQ']")
+                        star_review = star_container.find_element(By.CSS_SELECTOR, "div.d7ed-ppmM09")
+                        get_class_attr = star_review.get_attribute('class')
+                        get_star_class = get_class_attr.split(' ')
+                        five_star = 'd7ed-AYt6AP'
+                        four_star = 'd7ed-vdoKHm'
+                        three_star = 'd7ed-LrYHhb'
+                        two_star = 'd7ed-tWkzSc'
+                        one_star = 'd7ed-ygMGdU'
+                        if five_star in get_star_class:
+                            star_score = '5 sao'
+                        elif four_star in get_star_class:
+                            star_score = '4 sao'
+                        elif three_star in get_star_class:
+                            star_score = '3 sao'
+                        elif two_star in get_star_class:
+                            star_score = '2 sao'
+                        elif one_star in get_star_class:
+                            star_score = '1 sao'
+                        comment_author = comment.find_element(By.CSS_SELECTOR, "strong[class='_39ab-RycCgu']")
+                        author = comment_author.text
                         comment_wrapper = comment.find_element(By.CSS_SELECTOR, "div[class='_39ab-_2vzod']")
                         comment_content = comment_wrapper.find_element(By.TAG_NAME, "p")
                         comment_text = comment_content.text
-                        comment_contents.append(comment_text)
-                    score = rating_score_average.text
-                    numbs = rating_count.text 
-                    title = title_element.text
-                    row_data= {
-                        "TenSP":title,
-                        "DG":score,
-                        "SoDG":numbs,
-                        # "TenHienthi":username,
-                        # "verify":verify,
-                        #"comment_DG":star_score,
-                        "comment":comment_contents
-                    }
-
-                    data.append(row_data)
-                    
+                        comment_contents = comment_text
+                        score = rating_score_average.text
+                        numbs = rating_count.text 
+                        title = title_element.text
+                        row_data = {
+                            "product_title":title,
+                            "price": price,
+                            "rating":score,
+                            "total_reviews":numbs,
+                            "author": author,
+                            "comment_rating":star_score,
+                            "comment": comment_contents
+                        }
+                        
+                        data.append(row_data)
+                        
                     driver.back()
                     time.sleep(10)
                     products_elements = driver.find_elements(By.CSS_SELECTOR, "div[class='d7ed-d4keTB d7ed-OoK3wU']")
@@ -96,24 +110,24 @@ def scrape_sendo():
                     driver.back()
                     time.sleep(10)
                     products_elements = driver.find_elements(By.CSS_SELECTOR, "div[class='d7ed-d4keTB d7ed-OoK3wU']")
+
             except NoSuchElementException:
                 continue
 
         write_headers = not os.path.exists("sendo.csv")
-
         with open("sendo.csv", "a", newline="", encoding="utf-8") as csv_file:
             fieldnames = [
-                    "TenSP", "DG", "DG_average_image", "SoDG","comment_DG","comment"
-                ]
+                  "product_title", "price", "rating", "DG_average_image", "total_reviews", "author", "comment_rating", "comment", 
+            ]
             writer = DictWriter(csv_file, fieldnames=fieldnames)
             write_headers = True
-
             if write_headers:
                 writer.writeheader() 
+                writer.writerows(data)
 
-            writer.writerows(data)
 
     finally:
+        conn.close()
         driver.quit()
 
-scrape_sendo()
+scrape_sendo() 
