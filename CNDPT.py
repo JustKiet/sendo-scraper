@@ -8,7 +8,6 @@ from selenium.common.exceptions import NoSuchElementException
 from csv import DictWriter
 import time
 import os
-import sqlite3
 from selenium.webdriver.common.action_chains import ActionChains
 
 def scrape_sendo():
@@ -31,8 +30,9 @@ def scrape_sendo():
         products_wrapper = driver.find_element(By.XPATH, "//div[@class='d7ed-fdSIZS d7ed-OoK3wU d7ed-mPGbtR']")
         products_elements = products_wrapper.find_elements(By.CSS_SELECTOR, "div[class='d7ed-d4keTB d7ed-OoK3wU']")
         data=[]
-        comment_content = ""
-        star_score = ""
+        comment_content = []
+        author = []
+        star_score = []
         d_name_spans = ""
         for i in range(min(len(products_elements),1)):
             try:
@@ -61,7 +61,7 @@ def scrape_sendo():
                     rating_score_average = summary_element.find_element(By.XPATH, "//span[@class='d7ed-ChCxUf d7ed-AHa8cD d7ed-mzOLVa']")
                     rating_count = summary_element.find_element(By.XPATH, "//span[@class='_3141-BtwciV d7ed-KXpuoS d7ed-bjQW4F d7ed-ekib8m']")
                     comments = driver.find_elements(By.XPATH, "//*[@id='id-danh-gia']/div/div[3]/div")
-                    comment_contents = ""
+                    comment_contents = []
                     for comment in comments:
                         star_container = comment.find_element(By.CSS_SELECTOR, "div[class='d7ed-P_QiIC d7ed-GE9WCQ']")
                         star_review = star_container.find_element(By.CSS_SELECTOR, "div.d7ed-ppmM09")
@@ -73,21 +73,21 @@ def scrape_sendo():
                         two_star = 'd7ed-tWkzSc'
                         one_star = 'd7ed-ygMGdU'
                         if five_star in get_star_class:
-                            star_score = '5 sao'
+                            star_score.append('5 sao')
                         elif four_star in get_star_class:
-                            star_score = '4 sao'
+                            star_score.append('4 sao')
                         elif three_star in get_star_class:
-                            star_score = '3 sao'
+                            star_score.append('3 sao')
                         elif two_star in get_star_class:
-                            star_score = '2 sao'
+                            star_score.append('2 sao')
                         elif one_star in get_star_class:
-                            star_score = '1 sao'
+                            star_score.append('1 sao')
                         comment_author = comment.find_element(By.CSS_SELECTOR, "strong[class='_39ab-RycCgu']")
-                        author = comment_author.text
+                        author.append(comment_author.text)
                         comment_wrapper = comment.find_element(By.CSS_SELECTOR, "div[class='_39ab-_2vzod']")
                         comment_content = comment_wrapper.find_element(By.TAG_NAME, "p")
                         comment_text = comment_content.text
-                        comment_contents = comment_text
+                        comment_contents.append(comment_text)
                         score = rating_score_average.text
                         numbs = rating_count.text 
                         title = title_element.text
@@ -101,7 +101,18 @@ def scrape_sendo():
                             "comment": comment_contents
                         }
                         
-                        data.append(row_data)
+                    data.append(row_data)
+
+                    write_headers = not os.path.exists("sendo.csv")
+                    with open("sendo.csv", "a", newline="", encoding="utf-8") as csv_file:
+                        fieldnames = [
+                            "product_title", "price", "rating", "DG_average_image", "total_reviews", "author", "comment_rating", "comment", 
+                        ]
+                        writer = DictWriter(csv_file, fieldnames=fieldnames)
+                        write_headers = True
+                        if write_headers:
+                            writer.writeheader() 
+                            writer.writerows(data)
                         
                     driver.back()
                     time.sleep(10)
@@ -114,20 +125,10 @@ def scrape_sendo():
             except NoSuchElementException:
                 continue
 
-        write_headers = not os.path.exists("sendo.csv")
-        with open("sendo.csv", "a", newline="", encoding="utf-8") as csv_file:
-            fieldnames = [
-                  "product_title", "price", "rating", "DG_average_image", "total_reviews", "author", "comment_rating", "comment", 
-            ]
-            writer = DictWriter(csv_file, fieldnames=fieldnames)
-            write_headers = True
-            if write_headers:
-                writer.writeheader() 
-                writer.writerows(data)
+
 
 
     finally:
-        conn.close()
         driver.quit()
 
 scrape_sendo() 
